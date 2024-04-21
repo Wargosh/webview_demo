@@ -132,6 +132,7 @@ Page resource error:
             )
           : null,
       body: SafeArea(
+        maintainBottomViewPadding: true,
         child: GestureDetector(
           onTap: () {
             FocusManager.instance.primaryFocus?.unfocus();
