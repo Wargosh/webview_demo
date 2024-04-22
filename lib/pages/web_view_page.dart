@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:webview_demo/pages/camera_page.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 // Import for Android features.
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -18,7 +19,7 @@ class _WebViewPageState extends State<WebViewPage> {
   bool _showAppBar = true;
 
   @override
-  void initState() {
+  Future<void> initState() async {
     super.initState();
 
     // #docregion platform_features
@@ -33,11 +34,15 @@ class _WebViewPageState extends State<WebViewPage> {
     }
 
     final WebViewController controller =
-        WebViewController.fromPlatformCreationParams(params);
+        WebViewController.fromPlatformCreationParams(
+      params,
+      onPermissionRequest: (WebViewPermissionRequest request) {
+        request.grant();
+      },
+    );
     // #enddocregion platform_features
 
     controller
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -79,8 +84,10 @@ Page resource error:
             SnackBar(content: Text(message.message)),
           );
         },
-      )
-      ..loadRequest(Uri.parse('https://flutter.dev'));
+      );
+
+    await controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+    await controller.loadRequest(Uri.parse('https://flutter.dev'));
 
     // #docregion platform_features
     if (controller.platform is AndroidWebViewController) {
@@ -128,6 +135,18 @@ Page resource error:
                         },
                       )
                     : const SizedBox(),
+                IconButton(
+                  icon: const Icon(Icons.camera_alt),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (BuildContext context) {
+                          return CameraPage();
+                        },
+                      ),
+                    );
+                  },
+                )
               ],
             )
           : null,
