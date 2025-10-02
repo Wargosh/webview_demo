@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:webview_demo/pages/camera_page.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 // Import for Android features.
-import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 class WebViewPage extends StatefulWidget {
@@ -14,14 +12,17 @@ class WebViewPage extends StatefulWidget {
 
 class _WebViewPageState extends State<WebViewPage> {
   final TextEditingController _textController = TextEditingController();
-  late final WebViewController _webViewController;
+  WebViewController? _webViewController;
   String _currentUrl = '';
   bool _showAppBar = true;
 
   @override
-  Future<void> initState() async {
+  void initState() {
     super.initState();
+    _initializeWebView();
+  }
 
+  Future<void> _initializeWebView() async {
     // #docregion platform_features
     late final PlatformWebViewControllerCreationParams params;
     if (WebViewPlatform.instance is WebKitWebViewPlatform) {
@@ -90,14 +91,16 @@ Page resource error:
     await controller.loadRequest(Uri.parse('https://flutter.dev'));
 
     // #docregion platform_features
-    if (controller.platform is AndroidWebViewController) {
-      AndroidWebViewController.enableDebugging(true);
-      (controller.platform as AndroidWebViewController)
-          .setMediaPlaybackRequiresUserGesture(false);
-    }
+    // if (controller.platform is AndroidWebViewController) {
+    //   AndroidWebViewController.enableDebugging(true);
+    //   (controller.platform as AndroidWebViewController)
+    //       .setMediaPlaybackRequiresUserGesture(false);
+    // }
     // #enddocregion platform_features
 
-    _webViewController = controller;
+    setState(() {
+      _webViewController = controller;
+    });
   }
 
   @override
@@ -118,7 +121,7 @@ Page resource error:
                   onPressed: () {
                     setState(() {
                       _currentUrl = _textController.text;
-                      _webViewController.loadRequest(Uri.parse(_currentUrl));
+                      _webViewController?.loadRequest(Uri.parse(_currentUrl));
                       // _showAppBar = false;
                       FocusManager.instance.primaryFocus?.unfocus();
                     });
@@ -135,18 +138,29 @@ Page resource error:
                         },
                       )
                     : const SizedBox(),
+                // Reload button
                 IconButton(
-                  icon: const Icon(Icons.camera_alt),
+                  icon: const Icon(Icons.refresh),
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (BuildContext context) {
-                          return CameraPage();
-                        },
-                      ),
-                    );
+                    setState(() {
+                      _webViewController?.reload();
+                    });
                   },
-                )
+                ),
+
+                // Test camera permissions
+                // IconButton(
+                //   icon: const Icon(Icons.camera_alt),
+                //   onPressed: () {
+                //     Navigator.of(context).push(
+                //       MaterialPageRoute<void>(
+                //         builder: (BuildContext context) {
+                //           return CameraPage();
+                //         },
+                //       ),
+                //     );
+                //   },
+                // )
               ],
             )
           : null,
@@ -156,7 +170,9 @@ Page resource error:
           onTap: () {
             FocusManager.instance.primaryFocus?.unfocus();
           },
-          child: WebViewWidget(controller: _webViewController),
+          child: _webViewController != null
+              ? WebViewWidget(controller: _webViewController!)
+              : const Center(child: CircularProgressIndicator()),
         ),
       ),
     );
